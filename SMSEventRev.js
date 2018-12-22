@@ -1,4 +1,7 @@
 //SETUP
+const dotenv = require('dotenv');
+
+dotenv.config();
 
 //twilio library, comes with functions to send/receive messages
 var twilio = require('twilio');
@@ -43,7 +46,7 @@ function signInGetEvents () {
         .then( () =>
             driver.findElement(By.id('user_login')).sendKeys('kylel', Key.RETURN))
         .then( () =>
-            driver.findElement(By.id('user_password')).sendKeys('pillory,dele,quasar,juncture', Key.RETURN))
+            driver.findElement(By.id('user_password')).sendKeys(process.env.KYLE_PASS, Key.RETURN))
     }
 
     //create the initial webdriver and sign in; used to get eventLinks
@@ -51,7 +54,7 @@ function signInGetEvents () {
       .then( () =>
         utilityDriver.findElement(By.id('user_login')).sendKeys('kylel', Key.RETURN))
     .then( () =>
-        utilityDriver.findElement(By.id('user_password')).sendKeys('pillory,dele,quasar,juncture', Key.RETURN))
+        utilityDriver.findElement(By.id('user_password')).sendKeys(process.env.KYLE_PASS, Key.RETURN))
     .then( () =>
         getEventLinks(eventIdentifiers))
 }
