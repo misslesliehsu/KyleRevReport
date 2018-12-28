@@ -3,9 +3,6 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
-//twilio library, comes with functions to send/receive messages
-var twilio = require('twilio');
-
 //selenium library (select components), allows autonnavigation of websites and basic scraping
 const {Builder, By, Key, until} = require('selenium-webdriver');
 
@@ -33,6 +30,7 @@ var utilityDriver = new Builder()
         .build();
 
 
+console.log(process.argv)
 //ALL FUNCTIONS ARE BY DEFINITION CHAINED ONE AFTER ANOTHER
 
 function signInGetEvents () {
@@ -44,7 +42,7 @@ function signInGetEvents () {
         drivers.push(driver)
         driver.get('https://production.billfoldpos.com')
         .then( () =>
-            driver.findElement(By.id('user_login')).sendKeys('kylel', Key.RETURN))
+            driver.findElement(By.id('user_login')).sendKeys(process.env.KYLE_LOGIN, Key.RETURN))
         .then( () =>
             driver.findElement(By.id('user_password')).sendKeys(process.env.KYLE_PASS, Key.RETURN))
     }
@@ -52,7 +50,7 @@ function signInGetEvents () {
     //create the initial webdriver and sign in; used to get eventLinks
     utilityDriver.get('https://production.billfoldpos.com')
       .then( () =>
-        utilityDriver.findElement(By.id('user_login')).sendKeys('kylel', Key.RETURN))
+        utilityDriver.findElement(By.id('user_login')).sendKeys(process.env.KYLE_LOGIN, Key.RETURN))
     .then( () =>
         utilityDriver.findElement(By.id('user_password')).sendKeys(process.env.KYLE_PASS, Key.RETURN))
     .then( () =>
@@ -152,8 +150,8 @@ function prepareToSend(payload) {
 function sendText(title, amount) {
     const accountSid = process.env.Twilio_Sid;
     const authToken = process.env.Twilio_AToken;
-    const client = require('twilio')(accountSid, authToken);
     const header = `The current revenue for ${title} is ${amount}`
+    const client = require('twilio')(accountSid, authToken);
 
     //Note - to send to multiple recipients, can only copy/paste blocks below; can't use loops b/c of twilio constraints
 
