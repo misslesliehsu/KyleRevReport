@@ -105,7 +105,7 @@ function getAmounts(eventLinks) {
         var payload = {title: null, cash:null, card:null};
         var driver = drivers[i]
 
-        driver.get(eventLinks[i] + '/event_reports/new_report1?utf8=✓&min_created_at=&max_created_at=&payment_method%5B%5D=Payment%3A%3AType%3A%3ACash&vendor_profile_id%5B%5D=f039413b-79a9-4f63-862b-0cdab6946d55&vendor_profile_id%5B%5D=8ee1c3aa-cac5-42c1-bf09-ce70f2a35f53&commit=Filter')
+        driver.get(eventLinks[i] + '/event_reports/report1?utf8=✓&min_created_at=&max_created_at=&payment_method%5B%5D=Payment%3A%3AType%3A%3ACash&vendor_profile_id%5B%5D=27613e30-3845-4d65-bc2a-0490f2ec0c13&vendor_profile_id%5B%5D=65c57359-ffae-4ee7-9a8a-1850f6074a03&commit=Filter')
         .then(() =>
         driver.findElement(By.css('.header.item')).getAttribute('text'))
         .then((title) =>
@@ -113,13 +113,13 @@ function getAmounts(eventLinks) {
         .then( () =>
         driver.findElement(By.css('input[name="commit"]')).click())
         .then(() =>
-        driver.executeScript("return jQuery('.right.aligned')[jQuery('.right.aligned').length - 10].innerText"))
+        driver.executeScript("return jQuery('.right.aligned')[jQuery('.right.aligned').length - 11].innerText"))
         .then((cash) =>
         payload.cash = cash)
         .then(() =>
-        driver.get(eventLinks[i] + '/event_reports/report1?utf8=✓&min_created_at=&max_created_at=&payment_method%5B%5D=payment_card&vendor_profile_id%5B%5D=f039413b-79a9-4f63-862b-0cdab6946d55&vendor_profile_id%5B%5D=8ee1c3aa-cac5-42c1-bf09-ce70f2a35f53&commit=Filter'))
+        driver.get(eventLinks[i] + '/event_reports/report1?utf8=✓&min_created_at=&max_created_at=&payment_method%5B%5D=payment_card&vendor_profile_id%5B%5D=27613e30-3845-4d65-bc2a-0490f2ec0c13&vendor_profile_id%5B%5D=65c57359-ffae-4ee7-9a8a-1850f6074a03&commit=Filter'))
         .then(() =>
-        driver.executeScript("return jQuery('.right.aligned')[jQuery('.right.aligned').length - 9].innerText"))
+        driver.executeScript("return jQuery('.right.aligned')[jQuery('.right.aligned').length - 10].innerText"))
         .then((card) =>
          payload.card = card)
         .then(() =>
@@ -150,8 +150,8 @@ function prepareToSend(payload) {
 
 //take in payload of title, and total amount, and send messages
 function sendText(title, amount) {
-    const accountSid = 'AC9c46a4978740a40185a14205955dd157';
-    const authToken = '1e4acdae9016943a672365597a1bd1d4';
+    const accountSid = process.env.Twilio_Sid;
+    const authToken = process.env.Twilio_AToken;
     const client = require('twilio')(accountSid, authToken);
     const header = `The current revenue for ${title} is ${amount}`
 
