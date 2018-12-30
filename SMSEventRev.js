@@ -30,7 +30,6 @@ var utilityDriver = new Builder()
         .build();
 
 
-console.log(process.argv)
 //ALL FUNCTIONS ARE BY DEFINITION CHAINED ONE AFTER ANOTHER
 
 function signInGetEvents () {
@@ -49,7 +48,7 @@ function signInGetEvents () {
 
     //create the initial webdriver and sign in; used to get eventLinks
     utilityDriver.get('https://production.billfoldpos.com')
-      .then( () =>
+    .then( () =>
         utilityDriver.findElement(By.id('user_login')).sendKeys(process.env.KYLE_LOGIN, Key.RETURN))
     .then( () =>
         utilityDriver.findElement(By.id('user_password')).sendKeys(process.env.KYLE_PASS, Key.RETURN))
@@ -85,11 +84,13 @@ function getEventLinks(eventIdentifiers) {
                 console.log('MONITORING REV FOR: ' + partialLink_Title[1] )
             })
             .then(() => {
-                if (eventLinks.length === eventIdentifiers.length) {
-                    console.log('Sending results now, then on every half hour mark')
-                    getAmounts(eventLinks)
-                }
+                getAmounts(eventLinks)
             })
+            // .then(() => {
+            //     if (eventLinks.length === eventIdentifiers.length) {
+            //         console.log('Sending results now, then on every half hour mark')
+            //     }
+            // })
         }
     }
 }
@@ -100,45 +101,45 @@ function getEventLinks(eventIdentifiers) {
 //amounts to grab: Gross Cash and Net Sales COW(Bank Card)
 function getAmounts(eventLinks) {
     for (i in eventLinks) {
-        var payload = {title: null, cash:null, card:null};
-        var driver = drivers[i]
+        console.log(eventLinks)
+        console.log('before the wait, for index' + i);
+        setTimeout(function() {
+            console.log('after the wait, for index' + i);
+            var payload = {title: null, cash:null, card:null};
+            var driver = drivers[i]
 
-        driver.get(eventLinks[i] + '/event_reports/report1?utf8=✓&min_created_at=&max_created_at=&payment_method%5B%5D=Payment%3A%3AType%3A%3ACash&vendor_profile_id%5B%5D=27613e30-3845-4d65-bc2a-0490f2ec0c13&vendor_profile_id%5B%5D=65c57359-ffae-4ee7-9a8a-1850f6074a03&commit=Filter')
-        .then(() =>
-        driver.findElement(By.css('.header.item')).getAttribute('text'))
-        .then((title) =>
-        payload.title = title)
-        .then( () =>
-        driver.findElement(By.css('input[name="commit"]')).click())
-        .then(() =>
-        driver.executeScript("return jQuery('.right.aligned')[jQuery('.right.aligned').length - 11].innerText"))
-        .then((cash) =>
-        payload.cash = cash)
-        .then(() =>
-        driver.get(eventLinks[i] + '/event_reports/report1?utf8=✓&min_created_at=&max_created_at=&payment_method%5B%5D=payment_card&vendor_profile_id%5B%5D=27613e30-3845-4d65-bc2a-0490f2ec0c13&vendor_profile_id%5B%5D=65c57359-ffae-4ee7-9a8a-1850f6074a03&commit=Filter'))
-        .then(() =>
-        driver.executeScript("return jQuery('.right.aligned')[jQuery('.right.aligned').length - 10].innerText"))
-        .then((card) =>
-         payload.card = card)
-        .then(() =>
-        prepareToSend(payload))
+            driver.get(eventLinks[i] + '/event_reports/report1?utf8=✓&min_created_at=&max_created_at=&payment_method%5B%5D=Payment%3A%3AType%3A%3ACash&vendor_profile_id%5B%5D=27613e30-3845-4d65-bc2a-0490f2ec0c13&vendor_profile_id%5B%5D=65c57359-ffae-4ee7-9a8a-1850f6074a03&commit=Filter')
+            .then(() =>
+            driver.findElement(By.css('.header.item')).getAttribute('text'))
+            .then((title) =>
+            payload.title = title)
+            .then( () =>
+            driver.findElement(By.css('input[name="commit"]')).click())
+            .then(() =>
+            driver.executeScript("return jQuery('.right.aligned')[jQuery('.right.aligned').length - 11].innerText"))
+            .then((cash) =>
+            payload.cash = cash)
+            .then(() =>
+            driver.get(eventLinks[i] + '/event_reports/report1?utf8=✓&min_created_at=&max_created_at=&payment_method%5B%5D=payment_card&vendor_profile_id%5B%5D=27613e30-3845-4d65-bc2a-0490f2ec0c13&vendor_profile_id%5B%5D=65c57359-ffae-4ee7-9a8a-1850f6074a03&commit=Filter'))
+            .then(() =>
+            driver.executeScript("return jQuery('.right.aligned')[jQuery('.right.aligned').length - 10].innerText"))
+            .then((card) =>
+             payload.card = card)
+            .then(() =>
+            prepareToSend(payload))
+        }, 1000);
     }
 }
 
-//helper function
-function stringToMoney(stringAmount) {
-    if (stringAmount) {
-        return parseFloat(stringAmount.replace('$', '').replace(',', ''));
-    } else {
-        return 0;
-    }
+//helper function to take amount from webpage to actual number
+function stringToNum(stringAmount) {
+    return parseFloat(stringAmount.replace('$', '').replace(',', '')) || 0;
 }
 
 //take in payload of {title, cash and card}; format numbers, add numbers
 function prepareToSend(payload) {
-    console.log(payload)
     if (payload.cash.indexOf('$') > -1 || payload.card.indexOf('$') > -1) {
-        var amount = formatter.format(stringToMoney(payload.cash) + stringToMoney(payload.card))
+        var amount = formatter.format(stringToNum(payload.cash) + stringToNum(payload.card))
     } else {
         amount = '$0'
     }
