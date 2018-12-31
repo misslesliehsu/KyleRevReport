@@ -33,19 +33,6 @@ var utilityDriver = new Builder()
 //ALL FUNCTIONS ARE BY DEFINITION CHAINED ONE AFTER ANOTHER
 
 function signInGetEvents () {
-    //create one driver per event, sign in each
-    for (var i in eventIdentifiers) {
-        var driver = new Builder()
-            .forBrowser('chrome')
-            .build();
-        drivers.push(driver)
-        driver.get('https://production.billfoldpos.com')
-        .then( () =>
-            driver.findElement(By.id('user_login')).sendKeys(process.env.KYLE_LOGIN, Key.RETURN))
-        .then( () =>
-            driver.findElement(By.id('user_password')).sendKeys(process.env.KYLE_PASS, Key.RETURN))
-    }
-
     //create the initial webdriver and sign in; used to get eventLinks
     utilityDriver.get('https://production.billfoldpos.com')
     .then( () =>
@@ -58,40 +45,32 @@ function signInGetEvents () {
 
 
 //for each event search term, get the URL
-function getEventLinks(eventIdentifiers) {
-    //if user input indices
-    if (parseFloat(eventIdentifiers[0])) {
-        for (var i in eventIdentifiers) {
-            var index = parseFloat(eventIdentifiers[i]);
+function getEventLinks(inputtedEventIdentifiers) {
+    if (inputtedEventIdentifiers.length > 0) {
+        //if user input indices
+        if (parseFloat(inputtedEventIdentifiers[0])) {
+            var index = parseFloat(inputtedEventIdentifiers.splice(-1));
             utilityDriver.executeScript(`return [jQuery('tr').eq(${index}).find('td a').attr('href'), jQuery('tr').eq(${index}).find('td a').eq(0).text()]`)
             .then( (partialLink_Title) => {
                 eventLinks.push(('https://production.billfoldpos.com' + partialLink_Title[0]));
                 console.log('MONITORING REV FOR: ' + partialLink_Title[1] )
             })
-            .then(() => {
-                if (eventLinks.length === eventIdentifiers.length) {
-                    console.log('Sending results now, then on every half hour mark')
-                    getAmounts(eventLinks)
-                }
-            })
-        }
-    } else {
+            .then(() =>
+                getEventLinks(inputtedEventIdentifiers))
+        } else {
         //if user input search Terms
-        for (var i in eventIdentifiers) {
-            utilityDriver.executeScript(`return [jQuery('tr td div:contains(${eventIdentifiers[i]})').closest('tr').find('td a').attr('href'), jQuery('tr td div:contains(${eventIdentifiers[i]})').closest('tr').find('td a').eq(0).text()]`)
+            var term = inputtedEventIdentifiers.splice(-1);
+            utilityDriver.executeScript(`return [jQuery('tr td div:contains(${term})').closest('tr').find('td a').attr('href'), jQuery('tr td div:contains(${term})').closest('tr').find('td a').eq(0).text()]`)
             .then( (partialLink_Title) => {
                 eventLinks.push(('https://production.billfoldpos.com' + partialLink_Title[0]));
                 console.log('MONITORING REV FOR: ' + partialLink_Title[1] )
             })
-            .then(() => {
-                getAmounts(eventLinks)
-            })
-            // .then(() => {
-            //     if (eventLinks.length === eventIdentifiers.length) {
-            //         console.log('Sending results now, then on every half hour mark')
-            //     }
-            // })
+            .then(() =>
+                getEventLinks(inputtedEventIdentifiers))
         }
+    } else {
+        console.log('Sending results now, then on every half hour mark');
+        getAmounts(eventLinks);
     }
 }
 
@@ -99,35 +78,33 @@ function getEventLinks(eventIdentifiers) {
 //for each event URL, get the relevant amounts, and create a payload with event Title, Cash, and Card amounts
 //vendors to include: mixology & main
 //amounts to grab: Gross Cash and Net Sales COW(Bank Card)
-function getAmounts(eventLinks) {
-    for (i in eventLinks) {
-        console.log(eventLinks)
-        console.log('before the wait, for index' + i);
+function getAmounts(inputtedEventLinks) {
+    var payload = {title: null, cash:null, card:null};
+    if (inputtedEventLinks.length > 0) {
         setTimeout(function() {
-            console.log('after the wait, for index' + i);
-            var payload = {title: null, cash:null, card:null};
-            var driver = drivers[i]
-
-            driver.get(eventLinks[i] + '/event_reports/report1?utf8=✓&min_created_at=&max_created_at=&payment_method%5B%5D=Payment%3A%3AType%3A%3ACash&vendor_profile_id%5B%5D=27613e30-3845-4d65-bc2a-0490f2ec0c13&vendor_profile_id%5B%5D=65c57359-ffae-4ee7-9a8a-1850f6074a03&commit=Filter')
+            var currentEvent = inputtedEventLinks.splice(-1);
+            utilityDriver.get(currentEvent + '/event_reports/report1?utf8=✓&min_created_at=&max_created_at=&payment_method%5B%5D=Payment%3A%3AType%3A%3ACash&vendor_profile_id%5B%5D=27613e30-3845-4d65-bc2a-0490f2ec0c13&vendor_profile_id%5B%5D=65c57359-ffae-4ee7-9a8a-1850f6074a03&commit=Filter')
             .then(() =>
-            driver.findElement(By.css('.header.item')).getAttribute('text'))
+            utilityDriver.findElement(By.css('.header.item')).getAttribute('text'))
             .then((title) =>
             payload.title = title)
             .then( () =>
-            driver.findElement(By.css('input[name="commit"]')).click())
+            utilityDriver.findElement(By.css('input[name="commit"]')).click())
             .then(() =>
-            driver.executeScript("return jQuery('.right.aligned')[jQuery('.right.aligned').length - 11].innerText"))
+            utilityDriver.executeScript("return jQuery('.right.aligned')[jQuery('.right.aligned').length - 11].innerText"))
             .then((cash) =>
             payload.cash = cash)
             .then(() =>
-            driver.get(eventLinks[i] + '/event_reports/report1?utf8=✓&min_created_at=&max_created_at=&payment_method%5B%5D=payment_card&vendor_profile_id%5B%5D=27613e30-3845-4d65-bc2a-0490f2ec0c13&vendor_profile_id%5B%5D=65c57359-ffae-4ee7-9a8a-1850f6074a03&commit=Filter'))
+            utilityDriver.get(currentEvent + '/event_reports/report1?utf8=✓&min_created_at=&max_created_at=&payment_method%5B%5D=payment_card&vendor_profile_id%5B%5D=27613e30-3845-4d65-bc2a-0490f2ec0c13&vendor_profile_id%5B%5D=65c57359-ffae-4ee7-9a8a-1850f6074a03&commit=Filter'))
             .then(() =>
-            driver.executeScript("return jQuery('.right.aligned')[jQuery('.right.aligned').length - 10].innerText"))
+            utilityDriver.executeScript("return jQuery('.right.aligned')[jQuery('.right.aligned').length - 10].innerText"))
             .then((card) =>
              payload.card = card)
-            .then(() =>
-            prepareToSend(payload))
-        }, 1000);
+            .then(() => prepareToSend(payload))
+            .then( () =>
+            getAmounts(inputtedEventLinks)
+            )
+        }, 10000);
     }
 }
 
@@ -164,7 +141,7 @@ function sendText(title, amount) {
         to: 'whatsapp:+12063842889',
         body: header
       })
-      .then(message => console.log(message.sid))
+      // .then(message => console.log(message.sid))
       .done();
 
 
@@ -175,7 +152,7 @@ function sendText(title, amount) {
             to: '+18588294808',
             body: header
         })
-        .then(message => console.log(message.sid))
+        // .then(message => console.log(message.sid))
         .done();
 
 }
